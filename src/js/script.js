@@ -87,7 +87,7 @@ function handlerSearchImages(e) {
   gallery.innerHTML = '';
 
   if (query === '') {
-    Notify.failure('No image matching your search query was found');
+    Notify.failure('The search string cannot be empty.');
     return;
   }
 
@@ -95,7 +95,7 @@ function handlerSearchImages(e) {
     .then(resp => {
       if (resp.data.totalHits === 0) {
         Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.'
+          'No image matching your search query was found. Please try again.'
         );
       } else {
         renderCardCatList(resp.data.hits);

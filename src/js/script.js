@@ -1,36 +1,21 @@
+import { fetchImagesList } from './fetch-images-list';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const searchForm = document.querySelector('.search-form');
 const gallery = document.querySelector('.gallery');
 
-axios.defaults.baseURL = 'https://pixabay.com/api/';
-axios.interceptors.response.use(
-  response => {
-    return response;
-  },
-  error => {
-    Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
-  }
-);
-
 let query = '';
 let page = 1;
 let perPage = 40;
 let simpleLightbox;
 
-async function fetchCatList(query, page, perPage) {
-  return await axios.get(
-    `?key=39583334-643e1265d57bd4d698c546928&q=${query}&page=${page}&per_page=${perPage}&image_type=photo&orientation=horizontal&safesearch=true`
-  );
-}
-
 function renderCardCatList(images) {
-  console.log(images);
+  if (!gallery) {
+    return;
+  }
+
   const markup = images
     .map(image => {
       const {
@@ -76,13 +61,22 @@ function renderCardCatList(images) {
     .join();
 
   gallery.insertAdjacentHTML('beforeend', markup);
+
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
 }
 
 searchForm.addEventListener('submit', handlerSearchImages);
 
 function handlerSearchImages(e) {
   e.preventDefault();
-  query = e.currentTarget.elements.searchQuery.value;
+  query = e.currentTarget.elements.searchQuery.value.trim();
   page = 1;
   gallery.innerHTML = '';
 
@@ -91,7 +85,7 @@ function handlerSearchImages(e) {
     return;
   }
 
-  fetchCatList(query, page, perPage)
+  fetchImagesList(query, page, perPage)
     .then(resp => {
       if (resp.data.totalHits === 0) {
         Notify.failure(
@@ -99,7 +93,11 @@ function handlerSearchImages(e) {
         );
       } else {
         renderCardCatList(resp.data.hits);
-        simpleLightbox = new SimpleLightbox('.gallery a').refresh();
+
+        simpleLightbox = new SimpleLightbox('.gallery_item a', {
+          captionData: 'alt',
+          captionDelay: '250',
+        }).refresh();
         Notify.success(`Hooray! We found ${resp.data.totalHits} images.`);
       }
     })
@@ -113,10 +111,14 @@ function handlerLoadMore() {
   page += 1;
   simpleLightbox.destroy();
 
-  fetchCatList(query, page, perPage)
+  fetchImagesList(query, page, perPage)
     .then(resp => {
       renderCardCatList(resp.data.hits);
-      simpleLightbox = new SimpleLightbox('.gallery a').refresh();
+
+      simpleLightbox = new SimpleLightbox('.gallery_item a', {
+        captionData: 'alt',
+        captionDelay: '250',
+      }).refresh();
 
       const totalPages = Math.ceil(resp.data.totalHits / perPage);
 
@@ -143,10 +145,10 @@ function showLoadMorePage() {
 
 window.addEventListener('scroll', showLoadMorePage);
 
-arrowTop.onclick = function () {
+arrowTop.onclick = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.addEventListener('scroll', function () {
+window.addEventListener('scroll', () => {
   arrowTop.hidden = scrollY < document.documentElement.clientHeight;
 });

@@ -107,17 +107,18 @@ function handlerLoadMore() {
   page += 1;
   simpleLightbox.destroy();
 
-  const totalPages = Math.ceil(resp.data.totalHits / perPage);
-
-  if (page > totalPages) {
-    Notify.failure(
-      "We're sorry, but you've reached the end of search results."
-    );
-  }
-
   fetchImagesList(query, page, perPage)
     .then(resp => {
       renderCardList(resp.data.hits);
+
+      const totalPages = Math.ceil(resp.data.totalHits / perPage);
+
+      if (totalPages <= page) {
+        Notify.failure(
+          "We're sorry, but you've reached the end of search results."
+        );
+        return;
+      }
 
       simpleLightbox = new SimpleLightbox('.gallery a', {
         captionData: 'alt',

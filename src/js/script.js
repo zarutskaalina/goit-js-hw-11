@@ -11,7 +11,7 @@ let page = 1;
 let perPage = 40;
 let simpleLightbox;
 
-function renderCardCatList(images) {
+function renderCardList(images) {
   if (!gallery) {
     return;
   }
@@ -29,13 +29,10 @@ function renderCardCatList(images) {
         downloads,
       } = image;
 
-      return `<div class="photo-card">
-      <ul class="gallery_list list">
-      <li class="gallery_item">
+      return `
       <a class="gallery_link link" href="${largeImageURL}">
       <img class="gallery_image" src="${webformatURL}" alt="${tags}" width="300" loading="lazy" />
-      </a>
-      
+  
     <div class="info">
       <p class="info-item">
         <b>Likes:</b>
@@ -54,11 +51,10 @@ function renderCardCatList(images) {
         ${downloads}
       </p>
     </div>
-    </li>
-      </ul>
-  </div>`;
+    </div>
+    </a>`;
     })
-    .join();
+    .join('');
 
   gallery.insertAdjacentHTML('beforeend', markup);
 
@@ -92,9 +88,9 @@ function handlerSearchImages(e) {
           'No image matching your search query was found. Please try again.'
         );
       } else {
-        renderCardCatList(resp.data.hits);
+        renderCardList(resp.data.hits);
 
-        simpleLightbox = new SimpleLightbox('.gallery_item a', {
+        simpleLightbox = new SimpleLightbox('.gallery a', {
           captionData: 'alt',
           captionDelay: '250',
         }).refresh();
@@ -111,25 +107,27 @@ function handlerLoadMore() {
   page += 1;
   simpleLightbox.destroy();
 
+  const totalPages = Math.ceil(resp.data.totalHits / perPage);
+
+  if (page > totalPages) {
+    Notify.failure(
+      "We're sorry, but you've reached the end of search results."
+    );
+  }
+
   fetchImagesList(query, page, perPage)
     .then(resp => {
-      renderCardCatList(resp.data.hits);
+      renderCardList(resp.data.hits);
 
-      simpleLightbox = new SimpleLightbox('.gallery_item a', {
+      simpleLightbox = new SimpleLightbox('.gallery a', {
         captionData: 'alt',
         captionDelay: '250',
       }).refresh();
-
-      const totalPages = Math.ceil(resp.data.totalHits / perPage);
-
-      if (page > totalPages) {
-        Notify.failure(
-          "We're sorry, but you've reached the end of search results."
-        );
-      }
     })
     .catch(error => console.log(error));
 }
+
+const arrowTop = document.getElementById('arrowTop');
 
 function checkIfEndOfPage() {
   return (
